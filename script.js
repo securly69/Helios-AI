@@ -1,10 +1,7 @@
 // ─── Global State & Elements ─────────────────────────────────────────────────
 
-const zipaiMessageHistory = [];
-const zipaiSystemMessage = {
-  role:    "system",
-  content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
-};
+const zipaiHistory = [];  // stores just the text content of each message
+const zipaiSystemText = "You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.";
 
 const chatBody   = document.getElementById("chatBody");
 const sendBtn    = document.getElementById("sendBtn");
@@ -18,10 +15,10 @@ const overlayBtn = document.getElementById("overlaySignIn");
 
 overlayBtn.addEventListener("click", async () => {
   try {
-    await puter.auth.signIn();         // opens Puter.js popup
-    overlay.remove();                  // hide the modal
-    await puter.auth.whoami();         // verify auth
-    initChat();                        // wire up chat UI
+    await puter.auth.signIn();      // trigger Puter sign-in popup
+    overlay.remove();               // hide overlay
+    await puter.auth.whoami();      // verify
+    initChat();                     // set up chat UI
   } catch (err) {
     console.error("Sign-in failed:", err);
     alert("Sign-in failed—please try again.");
@@ -33,13 +30,14 @@ overlayBtn.addEventListener("click", async () => {
 //////////////////////////////
 
 function initChat() {
-  addZipAIMessage("Hi there! How may I assist you?", false);
+  addMessage(zipaiSystemText, false);  // show system greeting as assistant
+  addMessage("Hi there! How may I assist you?", false);
 
-  sendBtn.addEventListener("click", sendZipAIMessage);
+  sendBtn.addEventListener("click", sendMessage);
   chatInput.addEventListener("keydown", ev => {
     if (ev.key === "Enter" && !ev.shiftKey) {
       ev.preventDefault();
-      sendZipAIMessage();
+      sendMessage();
     }
   });
   chatInput.addEventListener("input", () => {
@@ -51,33 +49,31 @@ function initChat() {
 // Message Flow Functions //
 /////////////////////////////
 
-async function sendZipAIMessage() {
-  const userMessage = chatInput.value.trim();
-  if (!userMessage) return;
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
 
-  addZipAIMessage(userMessage, true);
+  addMessage(text, true);
   chatInput.value = "";
   sendBtn.disabled = true;
 
-  zipaiMessageHistory.push({ role: "user", content: userMessage });
-  const loadingEl = addLoadingMessage();
+  zipaiHistory.push({ role: "user", text });
+  const loader = addLoading();
 
   try {
-    const { text } = await tryZipAIModels();
-    let formatted = formatBulletedList(text);
-    formatted = convertToStyledBold(formatted);
+    const aiText = await askPuter();
+    zipaiHistory.push({ role: "assistant", text: aiText });
 
-    zipaiMessageHistory.push({ role: "assistant", content: formatted });
-    loadingEl.remove();
-    addZipAIMessage(formatted, false);
+    loader.remove();
+    addMessage(aiText, false);
   } catch (err) {
-    loadingEl.remove();
+    loader.remove();
     console.error("AI error:", err);
-    addZipAIMessage(`Error: ${err.message}`, false);
+    addMessage(`Error: ${err.message}`, false);
   }
 }
 
-function addZipAIMessage(content, isUser) {
+function addMessage(content, isUser) {
   const container = document.createElement("div");
   container.classList.add("message-container", isUser ? "user" : "assistant");
 
@@ -92,33 +88,27 @@ function addZipAIMessage(content, isUser) {
   bubble.textContent = content;
 
   if (isUser) {
-    container.appendChild(bubble);
-    container.appendChild(avatar);
+    container.append(bubble, avatar);
   } else {
-    container.appendChild(avatar);
-    container.appendChild(bubble);
+    container.append(avatar, bubble);
   }
 
   chatBody.appendChild(container);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
 
-function addLoadingMessage() {
+function addLoading() {
   const container = document.createElement("div");
   container.classList.add("message-container", "assistant");
-
   const avatar = document.createElement("span");
   avatar.classList.add("avatar");
   const icon = document.createElement("i");
   icon.classList.add("fas", "fa-robot");
   avatar.appendChild(icon);
-
   const bubble = document.createElement("div");
   bubble.classList.add("message");
   bubble.textContent = "Thinking...";
-
-  container.appendChild(avatar);
-  container.appendChild(bubble);
+  container.append(avatar, bubble);
   chatBody.appendChild(container);
   chatBody.scrollTop = chatBody.scrollHeight;
   return container;
@@ -128,18 +118,26 @@ function addLoadingMessage() {
 // Puter.js AI Integration   //
 ////////////////////////////////
 
-async function tryZipAIModels() {
+async function askPuter() {
+  // Build one prompt string: system + history
+  let prompt = zipaiSystemText + "\n";
+  for (let msg of zipaiHistory) {
+    prompt += (msg.role === "user" ? "User: " : "Assistant: ") + msg.text + "\n";
+  }
+  prompt += "Assistant:";
+
   try {
-    const resp = await puter.ai.chat({
-      model:       "gpt-4o",               // or "gpt-3.5-turbo"
-      messages:    [ zipaiSystemMessage, ...zipaiMessageHistory ],
+    // Correct usage: first arg is prompt string :contentReference[oaicite:1]{index=1}
+    const resp = await puter.ai.chat(prompt, {
+      model: "gpt-4o",          // or "gpt-3.5-turbo"
       temperature: 0.7,
-      max_tokens:  2048,
-      stream:      false
+      max_tokens: 2048,
+      stream: false
     });
-    const content = resp.choices?.[0]?.message?.content;
-    if (content) return { text: content };
-    throw new Error("No response content");
+
+    // resp.text (string) contains the completion
+    if (resp.text) return resp.text.trim();
+    throw new Error("Empty response");
   } catch (err) {
     console.group("Puter.js call failed");
     console.error(err);
@@ -151,29 +149,6 @@ async function tryZipAIModels() {
       } catch {}
     }
     console.groupEnd();
-    throw new Error(err.error || err.message || "Puter.js failed");
+    throw err;
   }
-}
-
-////////////////////////
-// Formatting Utils  ///
-////////////////////////
-
-function formatBulletedList(text) {
-  return text.replace(/^(?:-|\*|\u2022)\s+/gm, "• ");
-}
-
-function convertToStyledBold(text) {
-  const map = {
-    '0':'𝟎','1':'𝟏','2':'𝟐','3':'𝟑','4':'𝟒','5':'𝟓','6':'𝟔','7':'𝟕','8':'𝟖','9':'𝟗',
-    'a':'𝗮','b':'𝗯','c':'𝗰','d':'𝗱','e':'𝗲','f':'𝗳','g':'𝗴','h':'𝗵','i':'𝗶','j':'𝗷',
-    'k':'𝗸','l':'𝗹','m':'𝗺','n':'𝗻','o':'𝗼','p':'𝗽','q':'𝗾','r':'𝗿','s':'𝘀','t':'𝘁',
-    'u':'𝘂','v':'𝘃','w':'𝘄','x':'𝘅','y':'𝘆','z':'𝘇',
-    'A':'𝗔','B':'𝗕','C':'𝗖','D':'𝗗','E':'𝗘','F':'𝗙','G':'𝗚','H':'𝗛','I':'𝗜','J':'𝗝',
-    'K':'𝗞','L':'𝗟','M':'𝗠','N':'𝗡','O':'𝗢','P':'𝗣','Q':'𝗤','R':'𝗥','S':'𝗦','T':'𝗧',
-    'U':'𝗨','V':'𝗩','W':'𝗪','X':'𝗫','Y':'𝗬','Z':'𝗭'
-  };
-  return text.replace(/\*\*(.*?)\*\*/g, (_, m) =>
-    m.split("").map(c => map[c] || c).join("")
-  );
 }
