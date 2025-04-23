@@ -5,6 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helios Chatbot</title>
+
   <!-- Font Awesome for icons -->
   <link
     rel="stylesheet"
@@ -13,6 +14,7 @@
     crossorigin="anonymous"
     referrerpolicy="no-referrer"
   />
+
   <style>
     /* Chat widget container, always visible */
     .chatbox-container {
@@ -29,19 +31,6 @@
       flex-direction: column;
       overflow: hidden;
       z-index: 1000;
-    }
-    /* Close button (optional) */
-    .close-btn {
-      align-self: flex-end;
-      background: transparent;
-      border: none;
-      font-size: 18px;
-      padding: 10px;
-      cursor: pointer;
-      color: #888;
-    }
-    .close-btn:hover {
-      color: #555;
     }
     /* Chat messages area */
     .chatbox {
@@ -99,16 +88,9 @@
     }
   </style>
 </head>
-<body>
+<body class="show-chatbot">
 
-  <!-- Chatbot container (always open) -->
   <div class="chatbox-container">
-    <!-- (Optional) Close button if you want users to collapse -->
-    <!--
-    <button class="close-btn" title="Close Chat">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-    -->
     <div class="chatbox"></div>
     <div class="input-area">
       <div class="chat-input">
@@ -120,7 +102,7 @@
     </div>
   </div>
 
-  <!-- Include your existing script.js without modification -->
-  <script src="script.js"></script>
+  <!-- Load your existing script.js after DOM is parsed -->
+  <script src="script.js" defer></script>
 </body>
 </html>
