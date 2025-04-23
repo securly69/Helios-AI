@@ -1,43 +1,72 @@
-// ─── Load Puter.js via HTTPS ─────────────────────────────────────────────────
-// Include this in your HTML before loading script.js:
-// <script src="https://js.puter.com/v2/"></script>
-
-///////////////////////
-// Global Variables //
-/////////////////////
+// ─── Global State & Elements ─────────────────────────────────────────────────
 
 const zipaiMessageHistory = [];
 const zipaiSystemMessage = {
   role: "system",
   content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
 };
-const chatBody = document.getElementById("chatBody");
-const sendBtn  = document.getElementById("sendBtn");
-const chatInput= document.getElementById("chatInput");
-const signInBtn= document.getElementById("signInBtn");
+
+const chatBody  = document.getElementById("chatBody");
+const sendBtn   = document.getElementById("sendBtn");
+const chatInput = document.getElementById("chatInput");
 
 /////////////////////////////
-// Authentication & Setup //
+// Authentication Overlay //
 /////////////////////////////
 
-// Prompt user to sign in on button click
-signInBtn.addEventListener("click", async () => {
+// Create a full-screen sign-in overlay
+const overlay = document.createElement("div");
+overlay.id = "signInOverlay";
+Object.assign(overlay.style, {
+  position: "fixed",
+  top: 0, left: 0, right: 0, bottom: 0,
+  background: "rgba(0,0,0,0.8)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+});
+overlay.innerHTML = `
+  <div style="text-align:center; color:white; font-family:var(--font);">
+    <p style="font-size:1.2rem; margin-bottom:1rem;">
+      Please sign in to use ZipAI
+    </p>
+    <button id="overlaySignIn" style="
+      padding:0.8rem 1.2rem;
+      font-size:1rem;
+      border:none;
+      border-radius:4px;
+      background:var(--bg-bubble-user);
+      color:white;
+      cursor:pointer;
+    ">
+      Sign In
+    </button>
+  </div>
+`;
+document.body.appendChild(overlay);
+
+// Wire up the overlay sign-in button
+document.getElementById("overlaySignIn").addEventListener("click", async () => {
   try {
-    await puter.auth.signIn();         // Opens login popup
-    signInBtn.style.display = "none";  // Hide the button post-login
-    initChat();                        // Wire up the chat UI
+    await puter.auth.signIn();        // opens Puter.js popup
+    document.body.removeChild(overlay);
+    initChat();                       // now safe to init chat
   } catch (err) {
     console.error("Sign-in failed:", err);
-    alert("Unable to sign in. Please try again.");
+    alert("Sign-in failed — please try again.");
   }
 });
 
-// Only enable chat after successful sign-in
+//////////////////////////////
+// Chat Initialization     //
+//////////////////////////////
+
 function initChat() {
   // Initial greeting
   addZipAIMessage("Hi there! How may I assist you?", false);
 
-  // Wire up send button & input
+  // Enable send button and Enter-key handling
   sendBtn.addEventListener("click", sendZipAIMessage);
   chatInput.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -62,19 +91,15 @@ async function sendZipAIMessage() {
   chatInput.value = "";
   sendBtn.disabled = true;
 
-  // Track user message
   zipaiMessageHistory.push({ role: "user", content: userMessage });
   const loadingEl = addLoadingMessage();
 
   try {
-    // Call AI and get response
     const { text } = await tryZipAIModels();
-    
-    // Format and display
     let formatted = formatBulletedList(text);
     formatted = convertToStyledBold(formatted);
-    zipaiMessageHistory.push({ role: "assistant", content: formatted });
 
+    zipaiMessageHistory.push({ role: "assistant", content: formatted });
     loadingEl.remove();
     addZipAIMessage(formatted, false);
   } catch (err) {
@@ -128,22 +153,21 @@ function addLoadingMessage() {
   container.appendChild(bubble);
   chatBody.appendChild(container);
   chatBody.scrollTop = chatBody.scrollHeight;
-
   return container;
 }
 
 ////////////////////////////////
-// Puter.js AI Integration ////
+// Puter.js AI Integration   //
 ////////////////////////////////
 
 async function tryZipAIModels() {
   try {
     const response = await puter.ai.chat({
-      model:      "gpt-4o",      // or "gpt-3.5-turbo"
-      messages:   [zipaiSystemMessage, ...zipaiMessageHistory],
-      temperature:0.7,
-      max_tokens: 2048,
-      stream:     false
+      model:       "gpt-4o",    // or "gpt-3.5-turbo"
+      messages:    [zipaiSystemMessage, ...zipaiMessageHistory],
+      temperature: 0.7,
+      max_tokens:  2048,
+      stream:      false
     });
     const content = response.choices?.[0]?.message?.content;
     if (content) return { text: content };
@@ -155,7 +179,7 @@ async function tryZipAIModels() {
 }
 
 ////////////////////////
-// Formatting Utils ///
+// Formatting Utils  ///
 ////////////////////////
 
 function formatBulletedList(text) {
