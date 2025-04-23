@@ -6,71 +6,49 @@ const zipaiSystemMessage = {
   content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
 };
 
-const chatBody  = document.getElementById("chatBody");
-const sendBtn   = document.getElementById("sendBtn");
-const chatInput = document.getElementById("chatInput");
+const chatBody   = document.getElementById("chatBody");
+const sendBtn    = document.getElementById("sendBtn");
+const chatInput  = document.getElementById("chatInput");
+const overlay    = document.getElementById("signInOverlay");
+const overlayBtn = document.getElementById("overlaySignIn");
 
 /////////////////////////////
 // Authentication Overlay //
 /////////////////////////////
 
-// Create a full-screen sign-in overlay
-const overlay = document.createElement("div");
-overlay.id = "signInOverlay";
-Object.assign(overlay.style, {
-  position: "fixed",
-  top: 0, left: 0, right: 0, bottom: 0,
-  background: "rgba(0,0,0,0.8)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-});
-overlay.innerHTML = `
-  <div style="text-align:center; color:white; font-family:var(--font);">
-    <p style="font-size:1.2rem; margin-bottom:1rem;">
-      Please sign in to use ZipAI
-    </p>
-    <button id="overlaySignIn" style="
-      padding:0.8rem 1.2rem;
-      font-size:1rem;
-      border:none;
-      border-radius:4px;
-      background:var(--bg-bubble-user);
-      color:white;
-      cursor:pointer;
-    ">
-      Sign In
-    </button>
-  </div>
-`;
-document.body.appendChild(overlay);
-
-// Wire up the overlay sign-in button
-document.getElementById("overlaySignIn").addEventListener("click", async () => {
+overlayBtn.addEventListener("click", async () => {
   try {
-    await puter.auth.signIn();        // opens Puter.js popup
-    document.body.removeChild(overlay);
-    initChat();                       // now safe to init chat
+    await puter.auth.signIn();        // opens login popup
+    overlay.remove();                 // hide overlay
+    await verifyAuth();               // double-check auth
+    initChat();                       // start chat UI
   } catch (err) {
     console.error("Sign-in failed:", err);
     alert("Sign-in failed — please try again.");
   }
 });
 
+async function verifyAuth() {
+  try {
+    const whoami = await puter.auth.whoami();
+    console.log("Authenticated as:", whoami);
+  } catch (err) {
+    console.error("whoami failed:", err);
+    throw err;
+  }
+}
+
 //////////////////////////////
 // Chat Initialization     //
 //////////////////////////////
 
 function initChat() {
-  // Initial greeting
   addZipAIMessage("Hi there! How may I assist you?", false);
 
-  // Enable send button and Enter-key handling
   sendBtn.addEventListener("click", sendZipAIMessage);
-  chatInput.addEventListener("keydown", event => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
+  chatInput.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && !ev.shiftKey) {
+      ev.preventDefault();
       sendZipAIMessage();
     }
   });
@@ -90,11 +68,14 @@ async function sendZipAIMessage() {
   addZipAIMessage(userMessage, true);
   chatInput.value = "";
   sendBtn.disabled = true;
-
   zipaiMessageHistory.push({ role: "user", content: userMessage });
+
   const loadingEl = addLoadingMessage();
 
   try {
+    // Minimal test of Puter.js:
+    // await testMinimalAI();
+
     const { text } = await tryZipAIModels();
     let formatted = formatBulletedList(text);
     formatted = convertToStyledBold(formatted);
@@ -163,7 +144,7 @@ function addLoadingMessage() {
 async function tryZipAIModels() {
   try {
     const response = await puter.ai.chat({
-      model:       "gpt-4o",    // or "gpt-3.5-turbo"
+      model:       "gpt-4o",     // or "gpt-3.5-turbo"
       messages:    [zipaiSystemMessage, ...zipaiMessageHistory],
       temperature: 0.7,
       max_tokens:  2048,
@@ -173,8 +154,31 @@ async function tryZipAIModels() {
     if (content) return { text: content };
     throw new Error("No response content");
   } catch (err) {
-    console.error("Puter.js error:", err);
-    throw new Error("Puter.js failed to respond");
+    console.group("Puter.js call failed");
+    console.error(err);
+    if (err.response) {
+      console.error("Status:", err.response.status);
+      try {
+        const body = await err.response.text();
+        console.error("Body:", body);
+      } catch {}
+    }
+    console.groupEnd();
+    throw err;
+  }
+}
+
+// Optional minimal test to isolate issues
+async function testMinimalAI() {
+  try {
+    const resp = await puter.ai.chat({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "system", content: "Say hello" }],
+    });
+    console.log("Minimal AI OK:", resp);
+  } catch (e) {
+    console.error("Minimal AI ERR:", e);
+    throw e;
   }
 }
 
