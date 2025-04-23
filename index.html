@@ -6,31 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helios Chatbot</title>
   <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pVn5DpV+XgJiW6LMqKZcO6Yi3Ds67rX8KPZpX+QyEN5nJtO2/eXTyY8a6bE2Bv1wrFJ2qCwAS1NSTX1z+ARddA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-pVn5DpV+XgJiW6LMqKZcO6Yi3Ds67rX8KPZpX+QyEN5nJtO2/eXTyY8a6bE2Bv1wrFJ2qCwAS1NSTX1z+ARddA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
   <style>
-    /* Chatbot toggle button */
-    .wrench-buttonaa {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #007bff;
-      border: none;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      color: #fff;
-      font-size: 20px;
-      cursor: pointer;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    /* Chat widget container, hidden by default */
+    /* Chat widget container, always visible */
     .chatbox-container {
       position: fixed;
-      bottom: 80px;
+      bottom: 20px;
       right: 20px;
       width: 350px;
       height: 500px;
@@ -38,16 +25,12 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      display: none;
+      display: flex;
       flex-direction: column;
       overflow: hidden;
       z-index: 1000;
     }
-    /* Show container when body has class show-chatbot */
-    body.show-chatbot .chatbox-container {
-      display: flex;
-    }
-    /* Close button */
+    /* Close button (optional) */
     .close-btn {
       align-self: flex-end;
       background: transparent;
@@ -117,16 +100,15 @@
   </style>
 </head>
 <body>
-  <!-- Toggle button to open chatbot -->
-  <button class="wrench-buttonaa" title="Open Chat">
-    <i class="fa-solid fa-wrench"></i>
-  </button>
 
-  <!-- Chatbot container -->
+  <!-- Chatbot container (always open) -->
   <div class="chatbox-container">
+    <!-- (Optional) Close button if you want users to collapse -->
+    <!--
     <button class="close-btn" title="Close Chat">
       <i class="fa-solid fa-xmark"></i>
     </button>
+    -->
     <div class="chatbox"></div>
     <div class="input-area">
       <div class="chat-input">
@@ -138,7 +120,7 @@
     </div>
   </div>
 
-  <!-- Include the provided script -->
+  <!-- Include your existing script.js without modification -->
   <script src="script.js"></script>
 </body>
 </html>
