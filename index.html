@@ -32,6 +32,7 @@
       overflow: hidden;
       z-index: 1000;
     }
+
     /* Chat messages area */
     .chatbox {
       flex: 1;
@@ -62,6 +63,7 @@
     .chat.incoming p {
       background: #fff;
     }
+
     /* Input area */
     .input-area {
       display: flex;
@@ -88,7 +90,7 @@
     }
   </style>
 </head>
-<body class="show-chatbot">
+<body>
 
   <div class="chatbox-container">
     <div class="chatbox"></div>
@@ -102,7 +104,7 @@
     </div>
   </div>
 
-  <!-- Load your existing script.js after DOM is parsed -->
+  <!-- Your existing script.js unchanged, loaded with defer -->
   <script src="script.js" defer></script>
 </body>
 </html>
