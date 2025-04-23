@@ -2,7 +2,7 @@
 
 const zipaiMessageHistory = [];
 const zipaiSystemMessage = {
-  role: "system",
+  role:    "system",
   content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
 };
 
@@ -18,10 +18,10 @@ const overlayBtn = document.getElementById("overlaySignIn");
 
 overlayBtn.addEventListener("click", async () => {
   try {
-    await puter.auth.signIn();        // opens login popup
-    overlay.remove();                 // hide overlay
-    await puter.auth.whoami();        // verify auth
-    initChat();                       // now wire up chat
+    await puter.auth.signIn();         // opens Puter.js popup
+    overlay.remove();                  // hide the modal
+    await puter.auth.whoami();         // verify auth
+    initChat();                        // wire up chat UI
   } catch (err) {
     console.error("Sign-in failed:", err);
     alert("Sign-in failed—please try again.");
@@ -130,15 +130,14 @@ function addLoadingMessage() {
 
 async function tryZipAIModels() {
   try {
-    // Use puter.chat (not puter.ai.chat) so messages arrays are accepted
-    const response = await puter.chat({
-      model:       "gpt-4o",     // or "gpt-3.5-turbo"
-      messages:    [zipaiSystemMessage, ...zipaiMessageHistory],
+    const resp = await puter.ai.chat({
+      model:       "gpt-4o",               // or "gpt-3.5-turbo"
+      messages:    [ zipaiSystemMessage, ...zipaiMessageHistory ],
       temperature: 0.7,
       max_tokens:  2048,
       stream:      false
     });
-    const content = response.choices?.[0]?.message?.content;
+    const content = resp.choices?.[0]?.message?.content;
     if (content) return { text: content };
     throw new Error("No response content");
   } catch (err) {
@@ -152,7 +151,7 @@ async function tryZipAIModels() {
       } catch {}
     }
     console.groupEnd();
-    throw err;
+    throw new Error(err.error || err.message || "Puter.js failed");
   }
 }
 
