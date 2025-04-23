@@ -1,15 +1,4 @@
-// script.js
-// Load Puter.js via HTML: <script src="https://cdn.puter.com/puter.js"></script>
-
-// ZipAI core logic using Puter.js
-const zipaiMessageHistory = [];
-const zipaiSystemMessage = {
-  role: "system",
-  content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
-};
-
 // Bootstrap: initial greeting + wiring
-
 document.addEventListener("DOMContentLoaded", () => {
   addZipAIMessage("Hi there! How may I assist you?", false);
 
@@ -28,7 +17,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// Send message handler
+const zipaiMessageHistory = [];
+const zipaiSystemMessage = {
+  role: "system",
+  content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
+};
+
+const chatBody = document.getElementById("chatBody");
+
 async function sendZipAIMessage() {
   const chatInput = document.getElementById("chatInput");
   const userMessage = chatInput.value.trim();
@@ -42,7 +38,7 @@ async function sendZipAIMessage() {
   const loadingEl = addLoadingMessage();
 
   try {
-    const { text } = await tryZipAIModels(userMessage);
+    const { text } = await tryZipAIModels();
     let formatted = formatBulletedList(text);
     formatted = convertToStyledBold(formatted);
 
@@ -55,7 +51,6 @@ async function sendZipAIMessage() {
   }
 }
 
-// UI helpers
 function addZipAIMessage(content, isUser) {
   const container = document.createElement("div");
   container.classList.add("message-container", isUser ? "user" : "assistant");
@@ -78,7 +73,6 @@ function addZipAIMessage(content, isUser) {
     container.appendChild(bubble);
   }
 
-  const chatBody = document.getElementById("chatBody");
   chatBody.appendChild(container);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
@@ -99,37 +93,37 @@ function addLoadingMessage() {
 
   container.appendChild(avatar);
   container.appendChild(bubble);
-
-  const chatBody = document.getElementById("chatBody");
   chatBody.appendChild(container);
   chatBody.scrollTop = chatBody.scrollHeight;
 
   return container;
 }
 
-// Replace OpenRouter with Puter.js
-async function tryZipAIModels(userMessage) {
+// ─── Puter.js Integration ─────────────────────────────────────────────────────
+
+async function tryZipAIModels() {
+  // We only need one call via Puter.js – it handles model selection internally
   try {
-    const response = await puter.chat({
-      model: "gpt-4o", // or "gpt-3.5-turbo"
+    const response = await puter.ai.chat({
+      model: "gpt-4o",      // or "gpt-3.5-turbo", etc. :contentReference[oaicite:1]{index=1}
       messages: [zipaiSystemMessage, ...zipaiMessageHistory],
       temperature: 0.7,
       max_tokens: 2048,
+      stream: false
     });
 
+    // Puter.js returns { choices: [ { message: { content } } ] }
     const content = response.choices?.[0]?.message?.content;
-    if (content) {
-      return { text: content };
-    }
+    if (content) return { text: content };
     throw new Error("No response content");
-
   } catch (err) {
     console.error("Puter.js error:", err);
-    throw new Error("AI service failed to respond");
+    throw new Error("Puter.js failed to respond");
   }
 }
 
-// Formatting helpers
+// ─── Formatting Utilities ────────────────────────────────────────────────────
+
 function formatBulletedList(text) {
   return text.replace(/^(?:-|\*|\u2022)\s+/gm, "• ");
 }
@@ -145,6 +139,6 @@ function convertToStyledBold(text) {
     'U':'𝗨','V':'𝗩','W':'𝗪','X':'𝗫','Y':'𝗬','Z':'𝗭'
   };
   return text.replace(/\*\*(.*?)\*\*/g, (_, m) =>
-    m.split(""").map(c => map[c] || c).join("")
+    m.split("").map(c => map[c] || c).join("")
   );
 }
