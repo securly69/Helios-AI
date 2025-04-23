@@ -1,125 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Helios Chat</title>
-
-  <!-- Font Awesome -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
-
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helios Chatbot</title>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pVn5DpV+XgJiW6LMqKZcO6Yi3Ds67rX8KPZpX+QyEN5nJtO2/eXTyY8a6bE2Bv1wrFJ2qCwAS1NSTX1z+ARddA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
-    :root {
-      --bg-main: #343541;
-      --bg-bubble-user: #10b981;
-      --bg-bubble-assistant: #444654;
-      --text-light: #ffffff;
-      --font: "Segoe UI", sans-serif;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html {
-      height: 100%; width: 100%;
-      font-family: var(--font);
-      background: var(--bg-main);
-      color: var(--text-light);
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      padding: 16px;
-      font-size: 1.2rem;
-      background: #202123;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    header i { font-size: 1.5rem; }
-    #chatBody {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-    }
-    .message {
-      max-width: 70%;
-      margin-bottom: 12px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      line-height: 1.4;
-      word-wrap: break-word;
-      position: relative;
-    }
-    .assistant .message {
-      background: var(--bg-bubble-assistant);
-      align-self: flex-start;
-    }
-    .assistant .message::before {
-      content: "\f3fb";
-      font-family: "Font Awesome 6 Free";
-      font-weight: 900;
-      position: absolute;
-      top: 10px; left: -26px;
-      font-size: 18px;
-      color: #aaaaaa;
-    }
-    .user .message {
-      background: var(--bg-bubble-user);
-      align-self: flex-end;
-    }
-    footer {
-      display: flex;
-      padding: 12px 16px;
-      background: #40414f;
-      border-top: 1px solid #4a4a57;
-    }
-    footer textarea {
-      flex: 1;
-      resize: none;
+    /* Chatbot toggle button */
+    .wrench-buttonaa {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #007bff;
       border: none;
-      border-radius: 4px;
-      padding: 10px;
-      font-size: 0.95rem;
-      height: 60px;
-      background: #565761;
-      color: var(--text-light);
-      font-family: var(--font);
-    }
-    footer textarea:focus { outline: none; }
-    footer button {
-      margin-left: 8px;
-      border: none;
-      border-radius: 4px;
-      padding: 0 16px;
-      font-size: 1.1rem;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      color: #fff;
+      font-size: 20px;
       cursor: pointer;
-      background: var(--bg-bubble-user);
-      color: var(--text-light);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 1000;
     }
-    footer button:disabled { opacity: 0.5; cursor: default; }
+    /* Chat widget container, hidden by default */
+    .chatbox-container {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 350px;
+      height: 500px;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1000;
+    }
+    /* Show container when body has class show-chatbot */
+    body.show-chatbot .chatbox-container {
+      display: flex;
+    }
+    /* Close button */
+    .close-btn {
+      align-self: flex-end;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      padding: 10px;
+      cursor: pointer;
+      color: #888;
+    }
+    .close-btn:hover {
+      color: #555;
+    }
+    /* Chat messages area */
+    .chatbox {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9f9f9;
+    }
+    .chat.incoming {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .chat.outgoing {
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    .incoming-avatar {
+      margin-right: 8px;
+      color: #007bff;
+    }
+    .chat p {
+      background: #e1ffc7;
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .chat.incoming p {
+      background: #fff;
+    }
+    /* Input area */
+    .input-area {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+    .chat-input textarea {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      resize: none;
+      font-size: 14px;
+      outline: none;
+    }
+    .send-btn {
+      background: #007bff;
+      border: none;
+      padding: 0 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
+  <!-- Toggle button to open chatbot -->
+  <button class="wrench-buttonaa" title="Open Chat">
+    <i class="fa-solid fa-wrench"></i>
+  </button>
 
-  <header>
-    <i class="fas fa-robot"></i>
-    <span>Helios Chat</span>
-  </header>
-
-  <div id="chatBody" class="chat-body">
-    <!-- Messages injected by script.js -->
+  <!-- Chatbot container -->
+  <div class="chatbox-container">
+    <button class="close-btn" title="Close Chat">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <div class="chatbox"></div>
+    <div class="input-area">
+      <div class="chat-input">
+        <textarea rows="2" placeholder="Type a message..."></textarea>
+      </div>
+      <button class="send-btn" title="Send">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
   </div>
 
-  <footer>
-    <textarea id="chatInput" placeholder="Type your message..."></textarea>
-    <button id="sendBtn" disabled><i class="fas fa-paper-plane"></i></button>
-  </footer>
-
-  <!-- Only your external script.js, no inline code -->
-  <script src="script.js" defer></script>
+  <!-- Include the provided script -->
+  <script src="script.js"></script>
 </body>
 </html>
