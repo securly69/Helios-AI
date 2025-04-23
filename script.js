@@ -1,10 +1,43 @@
-// Bootstrap: initial greeting + wiring
-document.addEventListener("DOMContentLoaded", () => {
+// ─── Load Puter.js via HTTPS ─────────────────────────────────────────────────
+// Include this in your HTML before loading script.js:
+// <script src="https://js.puter.com/v2/"></script>
+
+///////////////////////
+// Global Variables //
+/////////////////////
+
+const zipaiMessageHistory = [];
+const zipaiSystemMessage = {
+  role: "system",
+  content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
+};
+const chatBody = document.getElementById("chatBody");
+const sendBtn  = document.getElementById("sendBtn");
+const chatInput= document.getElementById("chatInput");
+const signInBtn= document.getElementById("signInBtn");
+
+/////////////////////////////
+// Authentication & Setup //
+/////////////////////////////
+
+// Prompt user to sign in on button click
+signInBtn.addEventListener("click", async () => {
+  try {
+    await puter.auth.signIn();         // Opens login popup
+    signInBtn.style.display = "none";  // Hide the button post-login
+    initChat();                        // Wire up the chat UI
+  } catch (err) {
+    console.error("Sign-in failed:", err);
+    alert("Unable to sign in. Please try again.");
+  }
+});
+
+// Only enable chat after successful sign-in
+function initChat() {
+  // Initial greeting
   addZipAIMessage("Hi there! How may I assist you?", false);
 
-  const sendBtn   = document.getElementById("sendBtn");
-  const chatInput = document.getElementById("chatInput");
-
+  // Wire up send button & input
   sendBtn.addEventListener("click", sendZipAIMessage);
   chatInput.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -15,38 +48,38 @@ document.addEventListener("DOMContentLoaded", () => {
   chatInput.addEventListener("input", () => {
     sendBtn.disabled = !chatInput.value.trim();
   });
-});
+}
 
-const zipaiMessageHistory = [];
-const zipaiSystemMessage = {
-  role: "system",
-  content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
-};
-
-const chatBody = document.getElementById("chatBody");
+/////////////////////////////
+// Message Flow Functions //
+/////////////////////////////
 
 async function sendZipAIMessage() {
-  const chatInput = document.getElementById("chatInput");
   const userMessage = chatInput.value.trim();
   if (!userMessage) return;
 
   addZipAIMessage(userMessage, true);
   chatInput.value = "";
-  document.getElementById("sendBtn").disabled = true;
+  sendBtn.disabled = true;
 
+  // Track user message
   zipaiMessageHistory.push({ role: "user", content: userMessage });
   const loadingEl = addLoadingMessage();
 
   try {
+    // Call AI and get response
     const { text } = await tryZipAIModels();
+    
+    // Format and display
     let formatted = formatBulletedList(text);
     formatted = convertToStyledBold(formatted);
-
     zipaiMessageHistory.push({ role: "assistant", content: formatted });
+
     loadingEl.remove();
     addZipAIMessage(formatted, false);
   } catch (err) {
     loadingEl.remove();
+    console.error("AI error:", err);
     addZipAIMessage(`Error: ${err.message}`, false);
   }
 }
@@ -99,20 +132,19 @@ function addLoadingMessage() {
   return container;
 }
 
-// ─── Puter.js Integration ─────────────────────────────────────────────────────
+////////////////////////////////
+// Puter.js AI Integration ////
+////////////////////////////////
 
 async function tryZipAIModels() {
-  // We only need one call via Puter.js – it handles model selection internally
   try {
     const response = await puter.ai.chat({
-      model: "gpt-4o",      // or "gpt-3.5-turbo", etc. :contentReference[oaicite:1]{index=1}
-      messages: [zipaiSystemMessage, ...zipaiMessageHistory],
-      temperature: 0.7,
+      model:      "gpt-4o",      // or "gpt-3.5-turbo"
+      messages:   [zipaiSystemMessage, ...zipaiMessageHistory],
+      temperature:0.7,
       max_tokens: 2048,
-      stream: false
+      stream:     false
     });
-
-    // Puter.js returns { choices: [ { message: { content } } ] }
     const content = response.choices?.[0]?.message?.content;
     if (content) return { text: content };
     throw new Error("No response content");
@@ -122,7 +154,9 @@ async function tryZipAIModels() {
   }
 }
 
-// ─── Formatting Utilities ────────────────────────────────────────────────────
+////////////////////////
+// Formatting Utils ///
+////////////////////////
 
 function formatBulletedList(text) {
   return text.replace(/^(?:-|\*|\u2022)\s+/gm, "• ");
