@@ -28,118 +28,78 @@
       display: flex;
       flex-direction: column;
     }
-
-    /* Header */
     header {
-      padding: 16px;
-      font-size: 1.2rem;
-      background: #202123;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      padding: 16px; font-size: 1.2rem;
+      background: #202123; display: flex; align-items: center; gap: 8px;
     }
-    header i { font-size: 1.5rem; }
-
-    /* Chat body */
     #chatBody {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      flex: 1; padding: 16px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 8px;
     }
-
-    /* Message container */
     .message-container {
-      display: flex;
-      align-items: flex-start;
-      max-width: 70%;
+      display: flex; align-items: flex-start; max-width: 70%;
     }
-    .assistant {
-      justify-content: flex-start;
-    }
-    .user {
-      justify-content: flex-end;
-      align-self: flex-end;
-    }
-
-    /* Avatar */
-    .avatar {
-      font-size: 1.4rem;
-      color: #aaaaaa;
-    }
-    .user .avatar {
-      color: #10b981;
-    }
-    .assistant .avatar {
-      margin-right: 8px;
-    }
-    .user .avatar {
-      margin-left: 8px;
-    }
-
-    /* Bubble */
+    .assistant { justify-content: flex-start; }
+    .user { justify-content: flex-end; align-self: flex-end; }
+    .avatar { font-size: 1.4rem; color: #aaaaaa; }
+    .user .avatar { color: #10b981; margin-left: 8px; }
+    .assistant .avatar { margin-right: 8px; }
     .message {
-      padding: 10px 14px;
-      border-radius: 12px;
-      line-height: 1.4;
-      word-wrap: break-word;
-      position: relative;
+      padding: 10px 14px; border-radius: 12px; line-height: 1.4;
+      word-wrap: break-word; position: relative;
     }
-    .assistant .message {
-      background: var(--bg-bubble-assistant);
-      color: var(--text-light);
-    }
-    .user .message {
-      background: var(--bg-bubble-user);
-      color: var(--text-light);
-    }
-
-    /* Input footer */
+    .assistant .message { background: var(--bg-bubble-assistant); }
+    .user .message { background: var(--bg-bubble-user); }
     footer {
-      display: flex;
-      padding: 12px 16px;
-      background: #40414f;
-      border-top: 1px solid #4a4a57;
+      display: flex; padding: 12px 16px;
+      background: #40414f; border-top: 1px solid #4a4a57;
     }
     footer textarea {
-      flex: 1;
-      resize: none;
-      border: none;
-      border-radius: 4px;
-      padding: 10px;
-      font-size: 0.95rem;
-      height: 60px;
-      background: #565761;
-      color: var(--text-light);
+      flex: 1; resize: none; border: none; border-radius: 4px;
+      padding: 10px; font-size: 0.95rem; height: 60px;
+      background: #565761; color: var(--text-light);
       font-family: var(--font);
     }
     footer textarea:focus { outline: none; }
     footer button {
-      margin-left: 8px;
-      border: none;
-      border-radius: 4px;
-      padding: 0 16px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      background: var(--bg-bubble-user);
-      color: var(--text-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin-left: 8px; border: none; border-radius: 4px;
+      padding: 0 16px; font-size: 1.1rem; cursor: pointer;
+      background: var(--bg-bubble-user); color: var(--text-light);
+      display: flex; align-items: center; justify-content: center;
     }
     footer button:disabled { opacity: 0.5; cursor: default; }
+    /* Sign-in overlay */
+    #signInOverlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
   </style>
+
+  <!-- Puter.js library -->
   <script src="https://js.puter.com/v2/"></script>
   <script src="script.js" defer></script>
 </head>
 <body>
-
   <header>
     <i class="fas fa-robot"></i>
     <span>ZipAI</span>
   </header>
+
+  <!-- Chat messages -->
+  <div id="signInOverlay">
+    <div style="text-align:center; color:white; font-family:var(--font);">
+      <p style="font-size:1.2rem; margin-bottom:1rem;">
+        Please sign in to use ZipAI
+      </p>
+      <button id="overlaySignIn" style="
+        padding:0.8rem 1.2rem; font-size:1rem; border:none;
+        border-radius:4px; background:var(--bg-bubble-user);
+        color:white; cursor:pointer;
+      ">Sign In</button>
+    </div>
+  </div>
 
   <div id="chatBody"></div>
 
