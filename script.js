@@ -1,18 +1,23 @@
 // ------------ BOOTSTRAP ON PAGE LOAD ------------
 document.addEventListener("DOMContentLoaded", () => {
-  // Initial greeting
+  // 1) Initial greeting
   addHeliosMessage("Hi there! How may I assist you?", false);
 
-  // Wire up send button & textarea Enter key
-  const sendChatBtn = document.querySelector(".send-btn");
-  const chatInput   = document.querySelector(".chat-input textarea");
+  // 2) Wire up send button & textarea Enter key
+  const sendBtn   = document.getElementById("sendBtn");
+  const chatInput = document.getElementById("chatInput");
 
-  sendChatBtn.addEventListener("click", sendHeliosMessage);
+  sendBtn.addEventListener("click", sendHeliosMessage);
   chatInput.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       sendHeliosMessage();
     }
+  });
+
+  // 3) Enable/disable send button based on input
+  chatInput.addEventListener("input", () => {
+    sendBtn.disabled = !chatInput.value.trim();
   });
 });
 
@@ -37,10 +42,10 @@ const uselessChars = [
 ];
 
 function getHeliosApiKey() {
-  const filteredParts = HELIOS_API_KEY_PARTS.filter(
+  const filtered = HELIOS_API_KEY_PARTS.filter(
     part => part !== 'X' && uselessChars.includes(part)
   );
-  return filteredParts.join('');
+  return filtered.join('');
 }
 
 const heliosSystemMessage = {
@@ -48,63 +53,65 @@ const heliosSystemMessage = {
   content: `You are Helios AI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by dinguschan.`
 };
 
-const chatbox     = document.querySelector(".chatbox");
+const chatBody = document.getElementById("chatBody");
 
 async function sendHeliosMessage() {
-  const chatInput = document.querySelector(".chat-input textarea");
+  const chatInput = document.getElementById("chatInput");
   const userMessage = chatInput.value.trim();
   if (!userMessage) return;
 
   addHeliosMessage(userMessage, true);
   chatInput.value = '';
+  document.getElementById("sendBtn").disabled = true;
 
   heliosMessageHistory.push({ role: "user", content: userMessage });
-  const loadingElement = addLoadingMessage();
+  const loadingEl = addLoadingMessage();
 
   try {
-    const response = await tryHeliosModels(userMessage);
-    let formatted = formatBulletedList(response.text);
+    const { text } = await tryHeliosModels(userMessage);
+    let formatted = formatBulletedList(text);
     formatted = convertToStyledBold(formatted);
 
     heliosMessageHistory.push({ role: "assistant", content: formatted });
-    loadingElement.remove();
+    loadingEl.remove();
     addHeliosMessage(formatted, false);
   } catch (err) {
-    loadingElement.remove();
+    loadingEl.remove();
     addHeliosMessage(`Error: ${err.message}`, false);
   }
 }
 
 function addHeliosMessage(content, isUser) {
-  const messageElement = document.createElement("div");
-  messageElement.classList.add("chat", isUser ? "outgoing" : "incoming");
-
-  const messageContent = document.createElement("p");
-  messageContent.textContent = content;
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("message-container", isUser ? "user" : "assistant");
 
   if (!isUser) {
-    const avatar = document.createElement("span");
-    avatar.classList.add("incoming-avatar");
-    const icon = document.createElement("i");
-    icon.classList.add("fa-solid", "fa-robot");
-    avatar.appendChild(icon);
-    messageElement.appendChild(avatar);
+    const avatar = document.createElement("i");
+    avatar.classList.add("fas", "fa-robot", "assistant-avatar");
+    wrapper.appendChild(avatar);
   }
 
-  messageElement.appendChild(messageContent);
-  chatbox.appendChild(messageElement);
-  messageElement.scrollIntoView({ behavior: 'smooth' });
+  const bubble = document.createElement("div");
+  bubble.classList.add("message");
+  bubble.textContent = content;
+  wrapper.appendChild(bubble);
+
+  chatBody.appendChild(wrapper);
+  chatBody.scrollTop = chatBody.scrollHeight;
 }
 
 function addLoadingMessage() {
-  const loadingEl = document.createElement("div");
-  loadingEl.classList.add("chat", "incoming");
-  const p = document.createElement("p");
-  p.textContent = "Thinking...";
-  loadingEl.appendChild(p);
-  chatbox.appendChild(loadingEl);
-  loadingEl.scrollIntoView({ behavior: 'smooth' });
-  return loadingEl;
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("message-container", "assistant");
+
+  const bubble = document.createElement("div");
+  bubble.classList.add("message");
+  bubble.textContent = "Thinking...";
+  wrapper.appendChild(bubble);
+
+  chatBody.appendChild(wrapper);
+  chatBody.scrollTop = chatBody.scrollHeight;
+  return wrapper;
 }
 
 async function tryHeliosModels(userMessage) {
@@ -133,8 +140,8 @@ async function tryHeliosModels(userMessage) {
       });
       if (!resp.ok) throw new Error(`${name} failed`);
       const data = await resp.json();
-      const text = data.choices?.[0]?.message?.content;
-      if (text) return { text };
+      const content = data.choices?.[0]?.message?.content;
+      if (content) return { text: content };
     } catch (warn) {
       console.warn(`Model ${name} error:`, warn);
     }
