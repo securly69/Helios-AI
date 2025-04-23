@@ -1,9 +1,7 @@
-// ------------ BOOTSTRAP ON PAGE LOAD ------------
+// Bootstrap: initial greeting + wiring
 document.addEventListener("DOMContentLoaded", () => {
-  // 1) Initial greeting
   addHeliosMessage("Hi there! How may I assist you?", false);
 
-  // 2) Wire up send button & textarea Enter key
   const sendBtn   = document.getElementById("sendBtn");
   const chatInput = document.getElementById("chatInput");
 
@@ -14,16 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
       sendHeliosMessage();
     }
   });
-
-  // 3) Enable/disable send button based on input
   chatInput.addEventListener("input", () => {
     sendBtn.disabled = !chatInput.value.trim();
   });
 });
 
 
-// ------------ HELIOS CORE LOGIC (unchanged) ------------
-
+// Helios core logic (unchanged)
 const heliosMessageHistory = [];
 const HELIOS_API_KEY_PARTS = [
   's','k','-','o','r','-','v','1','-','8','e','f','6','7','3','c',
@@ -42,10 +37,9 @@ const uselessChars = [
 ];
 
 function getHeliosApiKey() {
-  const filtered = HELIOS_API_KEY_PARTS.filter(
-    part => part !== 'X' && uselessChars.includes(part)
-  );
-  return filtered.join('');
+  return HELIOS_API_KEY_PARTS
+    .filter(p => p !== 'X' && uselessChars.includes(p))
+    .join('');
 }
 
 const heliosSystemMessage = {
@@ -61,7 +55,7 @@ async function sendHeliosMessage() {
   if (!userMessage) return;
 
   addHeliosMessage(userMessage, true);
-  chatInput.value = '';
+  chatInput.value = "";
   document.getElementById("sendBtn").disabled = true;
 
   heliosMessageHistory.push({ role: "user", content: userMessage });
@@ -82,36 +76,51 @@ async function sendHeliosMessage() {
 }
 
 function addHeliosMessage(content, isUser) {
-  const wrapper = document.createElement("div");
-  wrapper.classList.add("message-container", isUser ? "user" : "assistant");
+  const container = document.createElement("div");
+  container.classList.add("message-container", isUser ? "user" : "assistant");
 
-  if (!isUser) {
-    const avatar = document.createElement("i");
-    avatar.classList.add("fas", "fa-robot", "assistant-avatar");
-    wrapper.appendChild(avatar);
-  }
+  const avatar = document.createElement("span");
+  avatar.classList.add("avatar");
+  const icon = document.createElement("i");
+  icon.classList.add("fas", isUser ? "fa-user" : "fa-robot");
+  avatar.appendChild(icon);
 
   const bubble = document.createElement("div");
   bubble.classList.add("message");
   bubble.textContent = content;
-  wrapper.appendChild(bubble);
 
-  chatBody.appendChild(wrapper);
+  if (isUser) {
+    container.appendChild(bubble);
+    container.appendChild(avatar);
+  } else {
+    container.appendChild(avatar);
+    container.appendChild(bubble);
+  }
+
+  chatBody.appendChild(container);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
 
 function addLoadingMessage() {
-  const wrapper = document.createElement("div");
-  wrapper.classList.add("message-container", "assistant");
+  const container = document.createElement("div");
+  container.classList.add("message-container", "assistant");
+
+  const avatar = document.createElement("span");
+  avatar.classList.add("avatar");
+  const icon = document.createElement("i");
+  icon.classList.add("fas", "fa-robot");
+  avatar.appendChild(icon);
 
   const bubble = document.createElement("div");
   bubble.classList.add("message");
   bubble.textContent = "Thinking...";
-  wrapper.appendChild(bubble);
 
-  chatBody.appendChild(wrapper);
+  container.appendChild(avatar);
+  container.appendChild(bubble);
+  chatBody.appendChild(container);
   chatBody.scrollTop = chatBody.scrollHeight;
-  return wrapper;
+
+  return container;
 }
 
 async function tryHeliosModels(userMessage) {
@@ -121,14 +130,13 @@ async function tryHeliosModels(userMessage) {
     "meta-llama/llama-3.2-3b-instruct:free",
     "mistralai/mistral-7b-instruct:free"
   ];
-
   for (let name of models) {
     try {
       const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${getHeliosApiKey()}`,
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: name,
@@ -142,15 +150,15 @@ async function tryHeliosModels(userMessage) {
       const data = await resp.json();
       const content = data.choices?.[0]?.message?.content;
       if (content) return { text: content };
-    } catch (warn) {
-      console.warn(`Model ${name} error:`, warn);
+    } catch (e) {
+      console.warn(`Model ${name} error:`, e);
     }
   }
   throw new Error("All models failed; try again later.");
 }
 
 function formatBulletedList(text) {
-  return text.replace(/^(?:-|\*|\u2022)\s+/gm, '• ');
+  return text.replace(/^(?:-|\*|\u2022)\s+/gm, "• ");
 }
 
 function convertToStyledBold(text) {
@@ -164,6 +172,6 @@ function convertToStyledBold(text) {
     'U':'𝗨','V':'𝗩','W':'𝗪','X':'𝗫','Y':'𝗬','Z':'𝗭'
   };
   return text.replace(/\*\*(.*?)\*\*/g, (_, m) =>
-    m.split('').map(c => map[c]||c).join('')
+    m.split("").map(c => map[c] || c).join("")
   );
 }
