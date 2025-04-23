@@ -20,23 +20,13 @@ overlayBtn.addEventListener("click", async () => {
   try {
     await puter.auth.signIn();        // opens login popup
     overlay.remove();                 // hide overlay
-    await verifyAuth();               // double-check auth
-    initChat();                       // start chat UI
+    await puter.auth.whoami();        // verify auth
+    initChat();                       // now wire up chat
   } catch (err) {
     console.error("Sign-in failed:", err);
-    alert("Sign-in failed — please try again.");
+    alert("Sign-in failed—please try again.");
   }
 });
-
-async function verifyAuth() {
-  try {
-    const whoami = await puter.auth.whoami();
-    console.log("Authenticated as:", whoami);
-  } catch (err) {
-    console.error("whoami failed:", err);
-    throw err;
-  }
-}
 
 //////////////////////////////
 // Chat Initialization     //
@@ -68,14 +58,11 @@ async function sendZipAIMessage() {
   addZipAIMessage(userMessage, true);
   chatInput.value = "";
   sendBtn.disabled = true;
-  zipaiMessageHistory.push({ role: "user", content: userMessage });
 
+  zipaiMessageHistory.push({ role: "user", content: userMessage });
   const loadingEl = addLoadingMessage();
 
   try {
-    // Minimal test of Puter.js:
-    // await testMinimalAI();
-
     const { text } = await tryZipAIModels();
     let formatted = formatBulletedList(text);
     formatted = convertToStyledBold(formatted);
@@ -143,7 +130,8 @@ function addLoadingMessage() {
 
 async function tryZipAIModels() {
   try {
-    const response = await puter.ai.chat({
+    // Use puter.chat (not puter.ai.chat) so messages arrays are accepted
+    const response = await puter.chat({
       model:       "gpt-4o",     // or "gpt-3.5-turbo"
       messages:    [zipaiSystemMessage, ...zipaiMessageHistory],
       temperature: 0.7,
@@ -165,20 +153,6 @@ async function tryZipAIModels() {
     }
     console.groupEnd();
     throw err;
-  }
-}
-
-// Optional minimal test to isolate issues
-async function testMinimalAI() {
-  try {
-    const resp = await puter.ai.chat({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "system", content: "Say hello" }],
-    });
-    console.log("Minimal AI OK:", resp);
-  } catch (e) {
-    console.error("Minimal AI ERR:", e);
-    throw e;
   }
 }
 
