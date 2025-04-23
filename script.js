@@ -1,15 +1,15 @@
 // Bootstrap: initial greeting + wiring
 document.addEventListener("DOMContentLoaded", () => {
-  addHeliosMessage("Hi there! How may I assist you?", false);
+  addZipAIMessage("Hi there! How may I assist you?", false);
 
   const sendBtn   = document.getElementById("sendBtn");
   const chatInput = document.getElementById("chatInput");
 
-  sendBtn.addEventListener("click", sendHeliosMessage);
+  sendBtn.addEventListener("click", sendZipAIMessage);
   chatInput.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      sendHeliosMessage();
+      sendZipAIMessage();
     }
   });
   chatInput.addEventListener("input", () => {
@@ -18,9 +18,9 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// Helios core logic (unchanged)
-const heliosMessageHistory = [];
-const HELIOS_API_KEY_PARTS = [
+// ZipAI core logic (renamed)
+const zipaiMessageHistory = [];
+const ZIPAI_API_KEY_PARTS = [
   's','k','-','o','r','-','v','1','-','8','e','f','6','7','3','c',
   'a','3','4','g','h','i','j','l','m','n','2','2','5','2','3','3','0','f','c','2','d','5','4',
   '2','c','1','7','0','9','e','9','3','3','1','e','2','c','7','d',
@@ -36,46 +36,46 @@ const uselessChars = [
   '6','0','0','5','d','5','5','6','c'
 ];
 
-function getHeliosApiKey() {
-  return HELIOS_API_KEY_PARTS
+function getZipAIKey() {
+  return ZIPAI_API_KEY_PARTS
     .filter(p => p !== 'X' && uselessChars.includes(p))
     .join('');
 }
 
-const heliosSystemMessage = {
+const zipaiSystemMessage = {
   role: "system",
-  content: `You are Helios AI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by dinguschan.`
+  content: `You are ZipAI, an advanced AI assistant designed to be helpful, knowledgeable, and adaptable. You were made by securly69.`
 };
 
 const chatBody = document.getElementById("chatBody");
 
-async function sendHeliosMessage() {
+async function sendZipAIMessage() {
   const chatInput = document.getElementById("chatInput");
   const userMessage = chatInput.value.trim();
   if (!userMessage) return;
 
-  addHeliosMessage(userMessage, true);
+  addZipAIMessage(userMessage, true);
   chatInput.value = "";
   document.getElementById("sendBtn").disabled = true;
 
-  heliosMessageHistory.push({ role: "user", content: userMessage });
+  zipaiMessageHistory.push({ role: "user", content: userMessage });
   const loadingEl = addLoadingMessage();
 
   try {
-    const { text } = await tryHeliosModels(userMessage);
+    const { text } = await tryZipAIModels(userMessage);
     let formatted = formatBulletedList(text);
     formatted = convertToStyledBold(formatted);
 
-    heliosMessageHistory.push({ role: "assistant", content: formatted });
+    zipaiMessageHistory.push({ role: "assistant", content: formatted });
     loadingEl.remove();
-    addHeliosMessage(formatted, false);
+    addZipAIMessage(formatted, false);
   } catch (err) {
     loadingEl.remove();
-    addHeliosMessage(`Error: ${err.message}`, false);
+    addZipAIMessage(`Error: ${err.message}`, false);
   }
 }
 
-function addHeliosMessage(content, isUser) {
+function addZipAIMessage(content, isUser) {
   const container = document.createElement("div");
   container.classList.add("message-container", isUser ? "user" : "assistant");
 
@@ -123,7 +123,7 @@ function addLoadingMessage() {
   return container;
 }
 
-async function tryHeliosModels(userMessage) {
+async function tryZipAIModels(userMessage) {
   const models = [
     "google/gemini-2.0-flash-exp:free",
     "google/gemini-flash-1.5-exp",
@@ -135,12 +135,12 @@ async function tryHeliosModels(userMessage) {
       const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${getHeliosApiKey()}`,
+          "Authorization": `Bearer ${getZipAIKey()}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: name,
-          messages: [heliosSystemMessage, ...heliosMessageHistory],
+          messages: [zipaiSystemMessage, ...zipaiMessageHistory],
           temperature: 0.7,
           max_tokens: 2048,
           repetition_penalty: 1
