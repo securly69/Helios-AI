@@ -4,13 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ZipAI</title>
-
-  <!-- Font Awesome -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
     :root {
       --bg-main: #343541;
@@ -37,11 +31,18 @@
       display: flex; flex-direction: column; gap: 8px;
     }
     .message-container {
-      display: flex; align-items: flex-start; max-width: 70%;
+      display: flex; max-width: 70%;
     }
-    .assistant { justify-content: flex-start; }
-    .user { justify-content: flex-end; align-self: flex-end; }
-    .avatar { font-size: 1.4rem; color: #aaaaaa; }
+    .assistant {
+      align-self: flex-start; flex-direction: row;
+    }
+    .user {
+      align-self: flex-end; flex-direction: row-reverse;
+    }
+    .message-container .avatar {
+      font-size: 1.4rem; color: #aaaaaa;
+      display: flex; align-items: center;
+    }
     .user .avatar { color: #10b981; margin-left: 8px; }
     .assistant .avatar { margin-right: 8px; }
     .message {
@@ -56,56 +57,82 @@
     }
     footer textarea {
       flex: 1; resize: none; border: none; border-radius: 4px;
-      padding: 10px; font-size: 0.95rem; height: 60px;
-      background: #565761; color: var(--text-light);
-      font-family: var(--font);
+      padding: 10px; background: #202123; color: white;
     }
-    footer textarea:focus { outline: none; }
     footer button {
-      margin-left: 8px; border: none; border-radius: 4px;
-      padding: 0 16px; font-size: 1.1rem; cursor: pointer;
-      background: var(--bg-bubble-user); color: var(--text-light);
-      display: flex; align-items: center; justify-content: center;
-    }
-    footer button:disabled { opacity: 0.5; cursor: default; }
-    /* Sign-in overlay */
-    #signInOverlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000;
+      margin-left: 12px; padding: 0 16px;
+      background: #10b981; border: none;
+      color: white; border-radius: 4px;
+      cursor: pointer; font-weight: bold;
     }
   </style>
-
-  <!-- Puter.js library -->
-  <script src="https://js.puter.com/v2/"></script>
-  <script src="script.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
 </head>
 <body>
-  <header>
-    <i class="fas fa-robot"></i>
-    <span>ZipAI</span>
-  </header>
-
-  <!-- Chat messages -->
-  <div id="signInOverlay">
-    <div style="text-align:center; color:white; font-family:var(--font);">
-      <p style="font-size:1.2rem; margin-bottom:1rem;">
-        Please sign in to use ZipAI
-      </p>
-      <button id="overlaySignIn" style="
-        padding:0.8rem 1.2rem; font-size:1rem; border:none;
-        border-radius:4px; background:var(--bg-bubble-user);
-        color:white; cursor:pointer;
-      ">Sign In</button>
-    </div>
-  </div>
-
+  <header><i class="fas fa-robot"></i> ZipAI</header>
   <div id="chatBody"></div>
-
   <footer>
-    <textarea id="chatInput" placeholder="Type your message..."></textarea>
-    <button id="sendBtn" disabled><i class="fas fa-paper-plane"></i></button>
+    <textarea id="userInput" rows="1" placeholder="Type your message here..."></textarea>
+    <button id="sendButton">Send</button>
   </footer>
+  <script>
+    const chatBody = $("#chatBody");
+    const userInput = $("#userInput");
+    const sendButton = $("#sendButton");
+    const md = window.markdownit();
+    const messages = [];
+
+    sendButton.on("click", () => {
+      const message = userInput.val().trim();
+      if (message) {
+        appendMessage("user", message);
+        messages.push({ role: "user", content: message });
+        userInput.val("");
+        sendButton.prop("disabled", true).text("Sending...");
+        sendToGroq();
+      }
+    });
+
+    userInput.on("keydown", (e) => {
+      if (e.keyCode === 13 && !e.shiftKey) {
+        e.preventDefault();
+        sendButton.click();
+      }
+    });
+
+    function appendMessage(role, content) {
+      const htmlContent = md.render(content);
+      const container = $(`<div class="message-container ${role}">
+        <div class="avatar">${role === "user" ? "<i class='fas fa-user'></i>" : "<i class='fas fa-robot'></i>"}</div>
+        <div class="message">${htmlContent}</div>
+      </div>`);
+      chatBody.append(container);
+      chatBody.scrollTop(chatBody[0].scrollHeight);
+    }
+
+    function sendToGroq() {
+      const apiKey = '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';
+      $.ajax({
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + apiKey,
+          "Content-Type": "application/json"
+        },
+        data: JSON.stringify({ model: "llama3-70b-8192", messages }),
+        success: function (response) {
+          const reply = response.choices[0].message;
+          messages.push(reply);
+          appendMessage("assistant", reply.content);
+          sendButton.prop("disabled", false).text("Send");
+        },
+        error: function () {
+          appendMessage("assistant", "Error contacting server. Try again later.");
+          sendButton.prop("disabled", false).text("Send");
+        }
+      });
+    }
+  </script>
 </body>
 </html>
